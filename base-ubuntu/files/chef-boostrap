@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# The script is set to run at multiple RC runlevels so make sure it can only be ran once
+if [ -f /etc/chef/chef-bootstrap.done ]
+  then
+  exit
+fi
+
+# define a function for later use
+function getmeta() {
+  wget -qO- http://169.254.169.254/latest$1
+}
+
+# get EC2 meta-data
+env=-
+role=-
+domain=-
+org=-
+company=-
+
+oldifs="$IFS"
+IFS='&'
+for datum in $(getmeta /user-data)
+do
+  case "$datum" in
+    env=*) env=${datum#env=};;
+    role=*) role=${datum#role=};;
+    domain=*) domain=${datum#domain=};;
+    org=*) org=${datum#org=};;
+    company=*) company=${datum#company}
+  esac
+done
+IFS="$oldifs"
+
+hostname="$(getmeta /meta-data/local-hostname)"
+chef_server_url="https://${domain}/organizations/${org}"
+validator=$env
+validator+="-validator"
+
+# write first-boot.json to be used by the chef-client command.
+# this sets the ROLE of the node and adds the env cookbook to its run list
+echo -e "{\"run_list\": [\"recipe[${company}-env-${env}]\",\"role[$role]\"]}" > /etc/chef/first-boot.json
+
+# write client.rb
+# this sets the ENVIRONMENT of the node, along with some basics.
+echo -e "log_level               :info" > /etc/chef/client.rb
+echo -e "log_location            STDOUT" >> /etc/chef/client.rb
+echo -e "chef_server_url         '${chef_server_url}'" >> /etc/chef/client.rb
+echo -e "validation_client_name  '$validator'" >> /etc/chef/client.rb
+echo -e "environment             '$env'" >> /etc/chef/client.rb
+echo -e "secret_file              encrypted_data_bag_secret" >> /etc/chef/client.rb
+# using the self signed ssl certs chef uses
+echo -e "verify_api_cert          false" >> /etc/chef/client.rb
+echo -e "ssl_verify_mode          :verify_none" >> /etc/chef/client.rb
+
+# append the node FQDN and Chef server URL to knife.rb
+echo -e "node_name               '$hostname'" > /etc/chef/knife.rb
+echo -e "chef_server_url         '${chef_server_url}'" >> /etc/chef/knife.rb
+echo -e "verify_api_cert          false" >> /etc/chef/knife.rb
+echo -e "ssl_verify_mode          :verify_none" >> /etc/chef/knife.rb
+
+echo 'displaying files for review purposes'
+cat /etc/init.d/chef-bootstrap
+cat /etc/chef/client.rb
+cat /etc/chef/knife.rb
+
+# run apt-get update immediately prior to chef client run
+apt-get -y update
+
+# run chef-client to register the node and to bootstrap the instance
+mkdir -p /var/log/chef/
+chef-client -j /etc/chef/first-boot.json -E "$env" -L /var/log/chef/bootstrap.log && touch /etc/chef/chef-bootstrap.done

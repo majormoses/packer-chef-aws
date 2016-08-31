@@ -1,0 +1,47 @@
+{
+  "variables": {
+    "ami_name": "",
+    "aws_access_key": "{{env `AWS_ACCESS_KEY_ID`}}",
+    "aws_secret_key": "{{env `AWS_SECRET_ACCESS_KEY`}}",
+    "source_ami": "",
+    "description": "",
+    "region": "",
+    "subnet_id": "",
+    "vpc_id": "",
+    "chef_env": "",
+    "chef_domain": "",
+    "chef_org": "",
+    "ruby_version": ""
+  },
+  "builders": [{
+    "type": "amazon-ebs",
+    "access_key": "{{user `aws_access_key`}}",
+    "secret_key": "{{user `aws_secret_key`}}",
+    "region": "{{user `region`}}",
+    "source_ami": "{{user `source_ami`}}",
+    "instance_type": "t2.medium",
+    "ssh_username": "ubuntu",
+    "ssh_timeout": "5m",
+    "subnet_id": "{{user `subnet_id`}}",
+    "vpc_id": "{{user `vpc_id`}}",
+    "associate_public_ip_address": false,
+    "ami_virtualization_type": "hvm",
+    "ami_description": "{{user `description`}}",
+    "ami_name": "{{user `description`}}-{{timestamp}}",
+    "tags": {
+      "Name": "{{user `ami_name`}}-{{timestamp}}"
+    }
+  }],
+  "provisioners": [{
+    "type": "file",
+    "source": "files",
+    "destination": "/tmp"
+  }, {
+    "type": "shell",
+    "script": "provisioners/base.sh",
+    "environment_vars": [
+      "RUBY_VERSION={{user `ruby_version`}}"
+    ],
+    "execute_command": "{{ .Vars }} sudo -E -S sh '{{ .Path }}'"
+  }]
+}

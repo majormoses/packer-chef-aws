@@ -1,0 +1,11 @@
+#!/bin/bash
+
+function getmeta() {
+  wget -qO- http://169.254.169.254/latest$1
+}
+
+hostname="$(getmeta /meta-data/local-hostname)"
+
+/usr/bin/knife node delete -y -c /etc/chef/knife.rb $hostname
+/usr/bin/knife client delete -y -c /etc/chef/knife.rb $hostname
+rm /etc/chef/client.pem /etc/chef/chef-bootstrap.done

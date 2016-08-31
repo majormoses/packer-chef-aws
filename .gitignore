@@ -1,0 +1,27 @@
+# stupid OSX files
+.DS_Store
+
+# gem files
+.rake_test_cache
+vendor/*
+.bundle/*
+
+# validators
+*validator.pem
+
+# encrypted secrets
+*secret*
+
+# emacs
+*~
+
+# vim
+*.sw[a-z]
+
+# subversion
+*/.svn/*
+
+# terrraform files
+terraform.tfstate.backup
+terraform.tfvars
+current.plan

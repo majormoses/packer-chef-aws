@@ -1,0 +1,10 @@
+
+{
+  "ami_name": "base-ubuntu",
+  "source_ami": "",
+  "description": "Ubuntu Base AMI",
+  "region": "us-west-2",
+  "subnet_id": "",
+  "vpc_id": "",
+  "ruby_version": "2.2.5"
+}

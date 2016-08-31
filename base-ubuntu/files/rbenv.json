@@ -1,0 +1,9 @@
+{
+  "rbenv": {
+    "ruby_version": "{{RUBY_VERSION}}"
+  },
+  "run_list": [
+    "recipe[cc_rbenv::default]",
+    "recipe[cc_rbenv::gems]"
+  ]
+}
